@@ -96,16 +96,16 @@ const run = async (
   readState(state, fields);
   const where = await stateFieldsToWhere({ fields, state });
   const q = await stateFieldsToQuery({ state, fields, prefix: "a." });
-  const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
+  //const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
 
-  let rows = await table.getJoinedRows({
+  let tbl_rows = await table.getJoinedRows({
     where,
-    joinFields,
-    aggregations,
+    //joinFields,
+    //aggregations,
     ...q,
   });
   return div({ id: "pivotoutput" }) + script(domReady(`
-  $("#output").pivotUI(${JSON.stringify(rows)}, {
+  $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, {
     rows: ["${rows}"],
     cols: ["${cols}"],
   })
