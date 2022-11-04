@@ -115,6 +115,12 @@ const run = async (
 module.exports = {
   headers: [
     {
+      script: `/plugins/public/pivottable@${require("./package.json").version}/jquery-ui.min.js`,
+    },
+    {
+      css: `/plugins/public/pivottable@${require("./package.json").version}/jquery-ui.min.css`,
+    },
+    {
       script: `/plugins/public/pivottable@${require("./package.json").version}/pivot.min.js`,
     },
     {
