@@ -1,0 +1,22 @@
+{
+  "name": "@saltcorn/pivottable",
+  "version": "0.1.12",
+  "description": "Pivot table based on pivottable.js",
+  "main": "index.js",
+  "dependencies": {
+    "@saltcorn/markup": "^0.7.2",
+    "@saltcorn/data": "^0.7.2"
+  },
+  "author": "Tom Nielsen",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^25.1.0"
+  },
+  "repository": "github:saltcorn/pivottable",
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
