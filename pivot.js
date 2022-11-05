@@ -36,6 +36,7 @@ const {
   run_action_column,
 } = require("@saltcorn/data/plugin-helper");
 
+
 const get_state_fields = async (table_id, viewname, { show_view }) => {
   const table_fields = await Field.find({ table_id });
   return table_fields
@@ -53,29 +54,13 @@ const configuration_workflow = (req) =>
       {
         name: "Columns",
         form: async (context) => {
-          const table = await Table.findOne(
-            context.table_id
-              ? { id: context.table_id }
-              : { name: context.exttable_name }
-          );
-          const fields = await table.getFields();
           return new Form({
+            blurb: "Create this with the Pivot Table Explorer instead of editing directly",
             fields: [
               {
-                name: "rows",
-                label: "Rows",
-                type: "String",
-                attributes: {
-                  options: fields.map(f => f.name),
-                },
-              },
-              {
-                name: "cols",
-                label: "Columns",
-                type: "String",
-                attributes: {
-                  options: fields.map(f => f.name),
-                },
+                name: "config",
+                label: "Configuration",
+                type: "JSON",
               },
             ],
           });
@@ -87,7 +72,7 @@ const configuration_workflow = (req) =>
 const run = async (
   table_id,
   viewname,
-  { rows, cols },
+  { config },
   state,
   extraArgs
 ) => {
@@ -105,38 +90,13 @@ const run = async (
     ...q,
   });
   return div({ id: "pivotoutput" }) + script(domReady(`
-  $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, {
-    rows: ["${rows}"],
-    cols: ["${cols}"],
-  })
+  $("#pivotoutput").pivot(${JSON.stringify(tbl_rows)}, 
+  ${JSON.stringify(config)})
   `))
 }
-
 module.exports = {
-  headers: [
-    {
-      script: `/plugins/public/pivottable@${require("./package.json").version}/jquery-ui.min.js`,
-    },
-    {
-      css: `/plugins/public/pivottable@${require("./package.json").version}/jquery-ui.min.css`,
-    },
-    {
-      script: `/plugins/public/pivottable@${require("./package.json").version}/pivot.min.js`,
-    },
-    {
-      css: `/plugins/public/pivottable@${require("./package.json").version}/pivot.min.css`,
-    },
-  ],
-  dependencies: ["@saltcorn/json"],
-  sc_plugin_api_version: 1,
-  plugin_name: "pivottable",
-  viewtemplates: [
-    {
-      name: "Pivot table explorer",
-      get_state_fields,
-      configuration_workflow,
-      run,
-    },
-    require("./pivot")
-  ],
-};
+  name: "Pivot table",
+  get_state_fields,
+  configuration_workflow,
+  run,
+}
