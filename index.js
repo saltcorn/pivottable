@@ -105,12 +105,51 @@ const run = async (
     ...q,
   });
   return div({ id: "pivotoutput" }) + script(domReady(`
+  window.pivotconfig={}
+  window.save_pivot_view = ()=> {
+    const newviewname = prompt("Please enter the name of the view to be saved", "");
+    if(!newviewname) return;
+    window.pivotconfig.newviewname=newviewname;
+    view_post('${viewname}', 'save_as_view', window.pivotconfig)
+  }
   $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, {
-    rows: ["${rows}"],
-    cols: ["${cols}"],
+    rows: [],
+    cols: [],
+    onRefresh: (cfg)=>{
+      var config_copy = JSON.parse(JSON.stringify(cfg));
+      //delete some values which are functions
+      delete config_copy["aggregators"];
+      delete config_copy["renderers"];
+      //delete some bulky default values
+      delete config_copy["rendererOptions"];
+      delete config_copy["localeStrings"];
+      window.pivotconfig = config_copy;
+      console.log(config_copy);
+    }
   })
-  `))
+  `)) + button({
+    class: "btn btn-primary mt-2",
+    onClick: `save_pivot_view()`
+  }, "Save as view")
 }
+
+const save_as_view = async (table_id, viewname, config, body, { req }) => {
+  // console.log(body);
+  const { newviewname, ...cfg } = body
+  const existing = await View.findOne({ name: newviewname });
+  if (existing) {
+    return { json: { error: "A view with that name already exists" } };
+  }
+  await View.create({
+    table_id,
+    configuration: { config: cfg },
+    name: newviewname,
+    viewtemplate: "Pivot table",
+    min_role: 1,
+  });
+  return { json: { success: "ok", notify: `View ${newviewname} created` } };
+
+};
 
 module.exports = {
   headers: [
@@ -136,6 +175,8 @@ module.exports = {
       get_state_fields,
       configuration_workflow,
       run,
+      routes: { save_as_view },
+
     },
     require("./pivot")
   ],
