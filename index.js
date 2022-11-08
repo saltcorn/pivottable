@@ -152,6 +152,15 @@ const save_as_view = async (table_id, viewname, config, body, { req }) => {
 
 };
 
+const explorer = {
+  name: "Pivot table explorer",
+  get_state_fields,
+  configuration_workflow,
+  run,
+  routes: { save_as_view },
+
+}
+
 module.exports = {
   headers: [
     {
@@ -171,14 +180,7 @@ module.exports = {
   sc_plugin_api_version: 1,
   plugin_name: "pivottable",
   viewtemplates: [
-    {
-      name: "Pivot table explorer",
-      get_state_fields,
-      configuration_workflow,
-      run,
-      routes: { save_as_view },
-
-    },
+    //explorer
     require("./pivot")
   ],
 };

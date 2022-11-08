@@ -143,6 +143,12 @@ const configuration_workflow = (req) =>
                 fieldview: "edit",
                 class: "d-none"
               },
+              {
+                name: "show_ui",
+                label: "Show UI",
+                sublabel: "Allow the user to change the table settings",
+                type: "Bool",
+              },
             ],
           });
         }
@@ -153,7 +159,7 @@ const configuration_workflow = (req) =>
 const run = async (
   table_id,
   viewname,
-  { config, columns },
+  { config, columns, show_ui },
   state,
   extraArgs
 ) => {
@@ -172,7 +178,7 @@ const run = async (
     ...q,
   });
 
-  const newConfig = { ...config, showUI: false }
+  const newConfig = { ...config, showUI: show_ui }
 
   return div({ id: "pivotoutput" }) + script(domReady(`
   $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, 
