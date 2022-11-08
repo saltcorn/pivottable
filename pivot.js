@@ -53,7 +53,7 @@ const configuration_workflow = (req) =>
   new Workflow({
     steps: [
       {
-        name: "Join fields",
+        name: "Columns",
         disablePreview: true,
         form: async (context) => {
           const table = await Table.findOne(
@@ -102,7 +102,7 @@ const configuration_workflow = (req) =>
         }
       },
       {
-        name: "Columns",
+        name: "Pivot table",
         disablePreview: true,
         form: async (context) => {
           const table = await Table.findOne({ id: context.table_id });
