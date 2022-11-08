@@ -118,7 +118,6 @@ const configuration_workflow = (req) =>
               //delete some bulky default values
               delete config_copy["rendererOptions"];
               delete config_copy["localeStrings"];
-              console.log(config_copy)
               $("textarea[name=config]").val(JSON.stringify(config_copy))
               $("textarea[name=config]").closest("form").trigger("change")
             }
@@ -164,10 +163,12 @@ const run = async (
     //aggregations,
     ...q,
   });
-  return pre(JSON.stringify(config, null, 2)) +
-    div({ id: "pivotoutput" }) + script(domReady(`
-  $("#pivotoutput").pivot(${JSON.stringify(tbl_rows)}, 
-  ${JSON.stringify(config)})
+
+  const newConfig = { ...config, showUI: false }
+
+  return div({ id: "pivotoutput" }) + script(domReady(`
+  $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, 
+  ${JSON.stringify(newConfig)})
   `))
 }
 module.exports = {
