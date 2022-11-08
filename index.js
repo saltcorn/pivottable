@@ -50,37 +50,37 @@ const get_state_fields = async (table_id, viewname, { show_view }) => {
 const configuration_workflow = (req) =>
   new Workflow({
     steps: [
-      {
-        name: "Columns",
-        form: async (context) => {
-          const table = await Table.findOne(
-            context.table_id
-              ? { id: context.table_id }
-              : { name: context.exttable_name }
-          );
-          const fields = await table.getFields();
-          return new Form({
-            fields: [
-              {
-                name: "rows",
-                label: "Rows",
-                type: "String",
-                attributes: {
-                  options: fields.map(f => f.name),
+      /*  {
+          name: "Columns",
+          form: async (context) => {
+            const table = await Table.findOne(
+              context.table_id
+                ? { id: context.table_id }
+                : { name: context.exttable_name }
+            );
+            const fields = await table.getFields();
+            return new Form({
+              fields: [
+                {
+                  name: "rows",
+                  label: "Rows",
+                  type: "String",
+                  attributes: {
+                    options: fields.map(f => f.name),
+                  },
                 },
-              },
-              {
-                name: "cols",
-                label: "Columns",
-                type: "String",
-                attributes: {
-                  options: fields.map(f => f.name),
+                {
+                  name: "cols",
+                  label: "Columns",
+                  type: "String",
+                  attributes: {
+                    options: fields.map(f => f.name),
+                  },
                 },
-              },
-            ],
-          });
-        }
-      }
+              ],
+            });
+          }
+        }*/
     ]
   })
 
@@ -173,6 +173,7 @@ module.exports = {
     {
       name: "Pivot table explorer",
       get_state_fields,
+      disableViewConfigPreview: true,
       configuration_workflow,
       run,
       routes: { save_as_view },
