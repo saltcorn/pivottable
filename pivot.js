@@ -92,12 +92,15 @@ const configuration_workflow = (req) =>
         form: async (context) => {
           const table = await Table.findOne({ id: context.table_id });
           const fields = await table.getFields();
-
-          //const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
+          const columns = (context.joinfields || []).map(({ join_field }) => ({
+            type: "JoinField",
+            join_field
+          }))
+          const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
 
           let tbl_rows = await table.getJoinedRows({
             where: {},
-            //joinFields,
+            joinFields,
             //aggregations,            
 
           });
@@ -108,14 +111,16 @@ const configuration_workflow = (req) =>
             ...(${JSON.stringify(context.config || {})}),
             onRefresh: (cfg)=>{
               var config_copy = JSON.parse(JSON.stringify(cfg));
+              //console.log("predelete", JSON.stringify(config_copy,null,2))
               //delete some values which are functions
               delete config_copy["aggregators"];
               delete config_copy["renderers"];
               //delete some bulky default values
               delete config_copy["rendererOptions"];
               delete config_copy["localeStrings"];
-             
-              $("input[name=config]").val(JSON.stringify(config_copy))
+              console.log(config_copy)
+              $("textarea[name=config]").val(JSON.stringify(config_copy))
+              $("textarea[name=config]").closest("form").trigger("change")
             }
           })`))
             ],
@@ -137,7 +142,7 @@ const configuration_workflow = (req) =>
 const run = async (
   table_id,
   viewname,
-  { config },
+  { config, joinfields },
   state,
   extraArgs
 ) => {
@@ -147,14 +152,20 @@ const run = async (
   const where = await stateFieldsToWhere({ fields, state });
   const q = await stateFieldsToQuery({ state, fields, prefix: "a." });
   //const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
+  const columns = (joinfields || []).map(({ join_field }) => ({
+    type: "JoinField",
+    join_field
+  }))
+  const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
 
   let tbl_rows = await table.getJoinedRows({
     where,
-    //joinFields,
+    joinFields,
     //aggregations,
     ...q,
   });
-  return div({ id: "pivotoutput" }) + script(domReady(`
+  return pre(JSON.stringify(config, null, 2)) +
+    div({ id: "pivotoutput" }) + script(domReady(`
   $("#pivotoutput").pivot(${JSON.stringify(tbl_rows)}, 
   ${JSON.stringify(config)})
   `))
