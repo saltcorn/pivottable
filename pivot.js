@@ -66,11 +66,24 @@ const configuration_workflow = (req) =>
             true
           );
           return new Form({
-            blurb: "Select the join fields that can be included in the pivot table",
+            blurb: "Select the columns (in addition to table fields) that can be included in the pivot table",
             fields: [
               new FieldRepeat({
-                name: "joinfields",
+                name: "columns",
                 fields: [
+                  {
+                    name: "type",
+                    label: ("Type"),
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      //TODO omit when no options
+                      options: [
+                        { name: "JoinField", label: "Join Field" },
+                        // { name: "Aggregation", label: __("Aggregation") }
+                      ],
+                    },
+                  },
                   {
                     name: "join_field",
                     label: "Join Field",
@@ -79,7 +92,9 @@ const configuration_workflow = (req) =>
                     attributes: {
                       options: parent_field_list,
                     },
+                    showIf: { type: "JoinField" },
                   },
+
                 ]
               })
             ],
@@ -92,16 +107,13 @@ const configuration_workflow = (req) =>
         form: async (context) => {
           const table = await Table.findOne({ id: context.table_id });
           const fields = await table.getFields();
-          const columns = (context.joinfields || []).map(({ join_field }) => ({
-            type: "JoinField",
-            join_field
-          }))
-          const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
+
+          const { joinFields, aggregations } = picked_fields_to_query(context.columns, fields);
 
           let tbl_rows = await table.getJoinedRows({
             where: {},
             joinFields,
-            //aggregations,            
+            aggregations,
 
           });
           return new Form({
@@ -141,7 +153,7 @@ const configuration_workflow = (req) =>
 const run = async (
   table_id,
   viewname,
-  { config, joinfields },
+  { config, columns },
   state,
   extraArgs
 ) => {
@@ -150,17 +162,13 @@ const run = async (
   readState(state, fields);
   const where = await stateFieldsToWhere({ fields, state });
   const q = await stateFieldsToQuery({ state, fields, prefix: "a." });
-  //const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
-  const columns = (joinfields || []).map(({ join_field }) => ({
-    type: "JoinField",
-    join_field
-  }))
+
   const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
 
   let tbl_rows = await table.getJoinedRows({
     where,
     joinFields,
-    //aggregations,
+    aggregations,
     ...q,
   });
 
