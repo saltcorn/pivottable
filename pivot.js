@@ -88,14 +88,44 @@ const configuration_workflow = (req) =>
       },
       {
         name: "Columns",
+        disablePreview: true,
         form: async (context) => {
+          const table = await Table.findOne({ id: context.table_id });
+          const fields = await table.getFields();
+
+          //const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
+
+          let tbl_rows = await table.getJoinedRows({
+            where: {},
+            //joinFields,
+            //aggregations,            
+
+          });
           return new Form({
-            blurb: "Create this with the Pivot Table Explorer instead of editing directly",
+            blurb: [
+              div({ id: "pivotoutput" }), script(domReady(`          
+          $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, {
+            ...(${JSON.stringify(context.config || {})}),
+            onRefresh: (cfg)=>{
+              var config_copy = JSON.parse(JSON.stringify(cfg));
+              //delete some values which are functions
+              delete config_copy["aggregators"];
+              delete config_copy["renderers"];
+              //delete some bulky default values
+              delete config_copy["rendererOptions"];
+              delete config_copy["localeStrings"];
+             
+              $("input[name=config]").val(JSON.stringify(config_copy))
+            }
+          })`))
+            ],
             fields: [
               {
                 name: "config",
-                label: "Configuration",
+                label: " ",
                 type: "JSON",
+                fieldview: "edit",
+                class: "d-none"
               },
             ],
           });
