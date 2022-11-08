@@ -4,6 +4,7 @@ const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
 const View = require("@saltcorn/data/models/view");
 const Workflow = require("@saltcorn/data/models/workflow");
+const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
 const {
   text,
   div,
@@ -51,6 +52,40 @@ const get_state_fields = async (table_id, viewname, { show_view }) => {
 const configuration_workflow = (req) =>
   new Workflow({
     steps: [
+      {
+        name: "Join fields",
+        disablePreview: true,
+        form: async (context) => {
+          const table = await Table.findOne(
+            context.table_id
+              ? { id: context.table_id }
+              : { name: context.exttable_name }
+          );
+          const { parent_field_list } = await table.get_parent_relations(
+            true,
+            true
+          );
+          return new Form({
+            blurb: "Select the join fields that can be included in the pivot table",
+            fields: [
+              new FieldRepeat({
+                name: "joinfields",
+                fields: [
+                  {
+                    name: "join_field",
+                    label: "Join Field",
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      options: parent_field_list,
+                    },
+                  },
+                ]
+              })
+            ],
+          });
+        }
+      },
       {
         name: "Columns",
         form: async (context) => {

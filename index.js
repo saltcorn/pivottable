@@ -52,6 +52,7 @@ const configuration_workflow = (req) =>
     steps: [
       /*  {
           name: "Columns",
+          disablePreview: true,
           form: async (context) => {
             const table = await Table.findOne(
               context.table_id
@@ -173,7 +174,6 @@ module.exports = {
     {
       name: "Pivot table explorer",
       get_state_fields,
-      disableViewConfigPreview: true,
       configuration_workflow,
       run,
       routes: { save_as_view },
