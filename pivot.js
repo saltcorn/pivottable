@@ -94,7 +94,11 @@ const configuration_workflow = (req) =>
                     },
                     showIf: { type: "JoinField" },
                   },
-
+                  {
+                    name: "label",
+                    label: "Label",
+                    type: "String",
+                  },
                 ]
               })
             ],
@@ -121,7 +125,7 @@ const configuration_workflow = (req) =>
               div({ id: "pivotoutput" }), script(domReady(`
           const renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
             $.pivotUtilities.plotly_renderers) : $.pivotUtilities.renderers;
-          $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, {
+          $("#pivotoutput").pivotUI(${buildDataXform(fields, context.columns, tbl_rows)}, {
             ...(${JSON.stringify(context.config || {})}),
             renderers,
             onRefresh: (cfg)=>{
@@ -159,6 +163,17 @@ const configuration_workflow = (req) =>
     ]
   })
 
+const buildDataXform = (fields, columns, rows) => `
+function (injectRecord) {
+  ${JSON.stringify(rows)}.map(function (row) {
+    injectRecord({
+      ${fields.map(f => `"${f.label}":row['${f.name}'],`).join("")}
+      ${columns.map(col => `"${col.label || col.join_field.replaceAll(".", "_")}":row['${col.join_field.replaceAll(".", "_")}'],`).join("")}
+    });
+  });
+}
+`
+
 const run = async (
   table_id,
   viewname,
@@ -186,7 +201,7 @@ const run = async (
   return div({ id: "pivotoutput" }) + script(domReady(`
   const renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
     $.pivotUtilities.plotly_renderers) : $.pivotUtilities.renderers;
-  $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, 
+  $("#pivotoutput").pivotUI(${buildDataXform(fields, columns, tbl_rows)}, 
   {
     ...(${JSON.stringify(newConfig)}),
     renderers
