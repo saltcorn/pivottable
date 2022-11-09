@@ -118,9 +118,12 @@ const configuration_workflow = (req) =>
           });
           return new Form({
             blurb: [
-              div({ id: "pivotoutput" }), script(domReady(`          
+              div({ id: "pivotoutput" }), script(domReady(`
+          const renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
+            $.pivotUtilities.plotly_renderers) : $.pivotUtilities.renderers;
           $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, {
             ...(${JSON.stringify(context.config || {})}),
+            renderers,
             onRefresh: (cfg)=>{
               var config_copy = JSON.parse(JSON.stringify(cfg));
               //console.log("predelete", JSON.stringify(config_copy,null,2))
@@ -181,8 +184,13 @@ const run = async (
   const newConfig = { ...config, showUI: show_ui }
 
   return div({ id: "pivotoutput" }) + script(domReady(`
+  const renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
+    $.pivotUtilities.plotly_renderers) : $.pivotUtilities.renderers;
   $("#pivotoutput").pivotUI(${JSON.stringify(tbl_rows)}, 
-  ${JSON.stringify(newConfig)})
+  {
+    ...(${JSON.stringify(newConfig)}),
+    renderers
+  })
   `))
 }
 module.exports = {
