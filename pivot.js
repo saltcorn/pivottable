@@ -37,7 +37,6 @@ const {
   run_action_column,
 } = require("@saltcorn/data/plugin-helper");
 
-
 const get_state_fields = async (table_id, viewname, { show_view }) => {
   const table_fields = await Field.find({ table_id });
   return table_fields
@@ -66,14 +65,15 @@ const configuration_workflow = (req) =>
             true
           );
           return new Form({
-            blurb: "Select the columns (in addition to table fields) that can be included in the pivot table",
+            blurb:
+              "Select the columns (in addition to table fields) that can be included in the pivot table",
             fields: [
               new FieldRepeat({
                 name: "columns",
                 fields: [
                   {
                     name: "type",
-                    label: ("Type"),
+                    label: "Type",
                     type: "String",
                     required: true,
                     attributes: {
@@ -99,11 +99,11 @@ const configuration_workflow = (req) =>
                     label: "Label",
                     type: "String",
                   },
-                ]
-              })
+                ],
+              }),
             ],
           });
-        }
+        },
       },
       {
         name: "Pivot table",
@@ -112,20 +112,28 @@ const configuration_workflow = (req) =>
           const table = await Table.findOne({ id: context.table_id });
           const fields = await table.getFields();
 
-          const { joinFields, aggregations } = picked_fields_to_query(context.columns, fields);
+          const { joinFields, aggregations } = picked_fields_to_query(
+            context.columns,
+            fields
+          );
 
           let tbl_rows = await table.getJoinedRows({
             where: {},
             joinFields,
             aggregations,
-
           });
           return new Form({
             blurb: [
-              div({ id: "pivotoutput" }), script(domReady(`
+              div({ id: "pivotoutput" }),
+              script(
+                domReady(`
           const renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
             $.pivotUtilities.plotly_renderers) : $.pivotUtilities.renderers;
-          $("#pivotoutput").pivotUI(${buildDataXform(fields, context.columns, tbl_rows)}, {
+          $("#pivotoutput").pivotUI(${buildDataXform(
+            fields,
+            context.columns,
+            tbl_rows
+          )}, {
             ...(${JSON.stringify(context.config || {})}),
             renderers,
             onRefresh: (cfg)=>{
@@ -140,7 +148,8 @@ const configuration_workflow = (req) =>
               $("textarea[name=config]").val(JSON.stringify(config_copy))
               $("textarea[name=config]").closest("form").trigger("change")
             }
-          })`))
+          })`)
+              ),
             ],
             fields: [
               {
@@ -148,7 +157,7 @@ const configuration_workflow = (req) =>
                 label: " ",
                 type: "JSON",
                 fieldview: "edit",
-                class: "d-none"
+                class: "d-none",
               },
               {
                 name: "show_ui",
@@ -158,26 +167,52 @@ const configuration_workflow = (req) =>
               },
             ],
           });
-        }
-      }
-    ]
-  })
+        },
+      },
+      {
+        name: "Plotly options",
+        form: async () => {
+          return new Form({
+            fields: [
+              {
+                name: "height",
+                label: "Height",
+                type: "Integer",
+              },
+              {
+                name: "width",
+                label: "Width",
+                type: "Integer",
+              },
+            ],
+          });
+        },
+      },
+    ],
+  });
 
 const buildDataXform = (fields, columns, rows) => `
 function (injectRecord) {
   ${JSON.stringify(rows)}.map(function (row) {
     injectRecord({
-      ${fields.map(f => `"${f.label}":row['${f.name}'],`).join("")}
-      ${columns.map(col => `"${col.label || col.join_field.replaceAll(".", "_")}":row['${col.join_field.replaceAll(".", "_")}'],`).join("")}
+      ${fields.map((f) => `"${f.label}":row['${f.name}'],`).join("")}
+      ${columns
+        .map(
+          (col) =>
+            `"${
+              col.label || col.join_field.replaceAll(".", "_")
+            }":row['${col.join_field.replaceAll(".", "_")}'],`
+        )
+        .join("")}
     });
   });
 }
-`
+`;
 
 const run = async (
   table_id,
   viewname,
-  { config, columns, show_ui },
+  { config, columns, show_ui, height, width },
   state,
   extraArgs
 ) => {
@@ -196,9 +231,18 @@ const run = async (
     ...q,
   });
 
-  const newConfig = { ...config, showUI: show_ui }
+  const newConfig = {
+    ...config,
+    showUI: show_ui,
+    rendererOptions: { plotly: {} },
+  };
+  if (height) newConfig.rendererOptions.plotly.height = height;
+  if (width) newConfig.rendererOptions.plotly.width = width;
 
-  return div({ id: "pivotoutput" }) + script(domReady(`
+  return (
+    div({ id: "pivotoutput" }) +
+    script(
+      domReady(`
   const renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
     $.pivotUtilities.plotly_renderers) : $.pivotUtilities.renderers;
   $("#pivotoutput").pivotUI(${buildDataXform(fields, columns, tbl_rows)}, 
@@ -206,11 +250,13 @@ const run = async (
     ...(${JSON.stringify(newConfig)}),
     renderers
   })
-  `))
-}
+  `)
+    )
+  );
+};
 module.exports = {
   name: "Pivot table",
   get_state_fields,
   configuration_workflow,
   run,
-}
+};
