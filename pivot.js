@@ -48,6 +48,20 @@ const get_state_fields = async (table_id, viewname, { show_view }) => {
     });
 };
 
+const remove_unused_fields = (fields, columns, rows) => {
+  const used_fields = new Set(
+    columns.filter((c) => c.type === "Field").map((c) => c.field)
+  );
+  const unused_fields = new Set([]);
+  fields.forEach((f) => {
+    if (!used_fields.has(f.name)) unused_fields.add(f.name);
+  });
+  for (const row of rows)
+    [...unused_fields].forEach((fnm) => {
+      delete row[fnm];
+    });
+};
+
 const configuration_workflow = (req) =>
   new Workflow({
     steps: [
@@ -60,6 +74,8 @@ const configuration_workflow = (req) =>
               ? { id: context.table_id }
               : { name: context.exttable_name }
           );
+          const fields = await table.getFields();
+          const json_fields = fields.filter((f) => f?.type?.name === "JSON");
           const { parent_field_list } = await table.get_parent_relations(
             true,
             true
@@ -77,12 +93,22 @@ const configuration_workflow = (req) =>
                     type: "String",
                     required: true,
                     attributes: {
-                      //TODO omit when no options
                       options: [
+                        { name: "Field", label: "Field" },
                         { name: "JoinField", label: "Join Field" },
                         // { name: "Aggregation", label: __("Aggregation") }
                       ],
                     },
+                  },
+                  {
+                    name: "field",
+                    label: "Field",
+                    type: "String",
+                    required: true,
+                    attributes: {
+                      options: fields.map((f) => f.name),
+                    },
+                    showIf: { type: "Field" },
                   },
                   {
                     name: "join_field",
@@ -122,6 +148,7 @@ const configuration_workflow = (req) =>
             joinFields,
             aggregations,
           });
+          remove_unused_fields(fields, context.columns, tbl_rows);
           return new Form({
             blurb: [
               div({ id: "pivotoutput" }),
@@ -195,14 +222,20 @@ const buildDataXform = (fields, columns, rows) => `
 function (injectRecord) {
   ${JSON.stringify(rows)}.map(function (row) {
     injectRecord({
-      ${fields.map((f) => `"${f.label}":row['${f.name}'],`).join("")}
       ${columns
-        .map(
-          (col) =>
-            `"${
+        .map((col) => {
+          if (col.type === "JoinField")
+            return `"${
               col.label || col.join_field.replaceAll(".", "_")
-            }":row['${col.join_field.replaceAll(".", "_")}'],`
-        )
+            }":row['${col.join_field.replaceAll(".", "_")}'],`;
+          if (col.type === "Field")
+            return `"${
+              col.label ||
+              fields.find((f) => f.name === col.field)?.label ||
+              col.field
+            }":row['${col.field}'],`;
+          return "";
+        })
         .join("")}
     });
   });
@@ -230,6 +263,7 @@ const run = async (
     aggregations,
     ...q,
   });
+  remove_unused_fields(fields, columns, tbl_rows);
 
   const newConfig = {
     ...config,
