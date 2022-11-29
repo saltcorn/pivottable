@@ -111,11 +111,22 @@ const configuration_workflow = (req) =>
                     showIf: { type: "Field" },
                   },
                   {
+                    name: "expand_subfields",
+                    label: "Exapand subfields",
+                    sublabel: "Exapand all subfields in schema",
+                    type: "Bool",
+                    showIf: {
+                      type: "Field",
+                      field: json_fields.map((f) => f.name),
+                    },
+                  },
+                  {
                     name: "subfield",
                     label: "Subfield",
                     type: "String",
                     showIf: {
                       type: "Field",
+                      expand_subfields: false,
                       field: json_fields.map((f) => f.name),
                     },
                   },
@@ -238,11 +249,22 @@ function (injectRecord) {
               col.label || col.join_field.replaceAll(".", "_")
             }":row['${col.join_field.replaceAll(".", "_")}'],`;
           if (col.type === "Field") {
-            if (col.subfield)
+            if (col.expand_subfields) {
+              const field = fields.find((f) => f.name === col.field);
+              return (field.attributes?.schema || [])
+                .map(
+                  (t) =>
+                    `"${(col.label || col.field) + "." + t.key}":row['${
+                      col.field
+                    }']?.['${t.key}'],`
+                )
+                .join("");
+            } else if (col.subfield)
               return `"${
                 col.label ||
-                fields.find((f) => f.name === col.field)?.label ||
-                col.field
+                (fields.find((f) => f.name === col.field)?.label || col.field) +
+                  "." +
+                  col.subfield
               }":row['${col.field}']?.['${col.subfield}'],`;
             else
               return `"${
