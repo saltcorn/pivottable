@@ -288,9 +288,32 @@ const run = async (
     )
   );
 };
+
+const initial_config = async ({ table_id, exttable_name }) => {
+  const table = await Table.findOne(
+    table_id ? { id: table_id } : { name: exttable_name }
+  );
+
+  const fields = await table.getFields();
+  let columns = [];
+
+  fields.forEach((f) => {
+    if (f.primary_key || f.type === "File") return;
+    else if (f.is_fkey && f.attributes.summary_field)
+      columns.push({
+        type: "JoinField",
+        join_field: `${f.name}.${f.attributes.summary_field}`,
+        label: `${f.label} ${f.attributes.summary_field}`,
+      });
+    else columns.push({ type: "Field", field: f.name, label: f.label });
+  });
+
+  return { columns };
+};
 module.exports = {
   name: "Pivot table",
   get_state_fields,
   configuration_workflow,
   run,
+  initial_config,
 };
