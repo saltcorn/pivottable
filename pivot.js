@@ -111,6 +111,15 @@ const configuration_workflow = (req) =>
                     showIf: { type: "Field" },
                   },
                   {
+                    name: "subfield",
+                    label: "Subfield",
+                    type: "String",
+                    showIf: {
+                      type: "Field",
+                      field: json_fields.map((f) => f.name),
+                    },
+                  },
+                  {
                     name: "join_field",
                     label: "Join Field",
                     type: "String",
@@ -228,12 +237,20 @@ function (injectRecord) {
             return `"${
               col.label || col.join_field.replaceAll(".", "_")
             }":row['${col.join_field.replaceAll(".", "_")}'],`;
-          if (col.type === "Field")
-            return `"${
-              col.label ||
-              fields.find((f) => f.name === col.field)?.label ||
-              col.field
-            }":row['${col.field}'],`;
+          if (col.type === "Field") {
+            if (col.subfield)
+              return `"${
+                col.label ||
+                fields.find((f) => f.name === col.field)?.label ||
+                col.field
+              }":row['${col.field}']?.['${col.subfield}'],`;
+            else
+              return `"${
+                col.label ||
+                fields.find((f) => f.name === col.field)?.label ||
+                col.field
+              }":row['${col.field}'],`;
+          }
           return "";
         })
         .join("")}
