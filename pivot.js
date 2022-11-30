@@ -81,8 +81,7 @@ const configuration_workflow = (req) =>
             true
           );
           return new Form({
-            blurb:
-              "Select the columns (in addition to table fields) that can be included in the pivot table",
+            blurb: "Select the columns that can be included in the pivot table",
             fields: [
               new FieldRepeat({
                 name: "columns",
