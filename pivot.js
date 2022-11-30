@@ -246,16 +246,16 @@ function (injectRecord) {
           if (col.type === "JoinField")
             return `"${
               col.label || col.join_field.replaceAll(".", "_")
-            }":row['${col.join_field.replaceAll(".", "_")}'],`;
+            }":row["${col.join_field.replaceAll(".", "_")}"],`;
           if (col.type === "Field") {
             if (col.expand_subfields) {
               const field = fields.find((f) => f.name === col.field);
               return (field.attributes?.schema || [])
                 .map(
                   (t) =>
-                    `"${(col.label || col.field) + "." + t.key}":row['${
+                    `"${(col.label || col.field) + "." + t.key}":row["${
                       col.field
-                    }']?.['${t.key}'],`
+                    }"]?.["${t.key}"],`
                 )
                 .join("");
             } else if (col.subfield)
@@ -264,13 +264,13 @@ function (injectRecord) {
                 (fields.find((f) => f.name === col.field)?.label || col.field) +
                   "." +
                   col.subfield
-              }":row['${col.field}']?.['${col.subfield}'],`;
+              }":row["${col.field}"]?.["${col.subfield}"],`;
             else
               return `"${
                 col.label ||
                 fields.find((f) => f.name === col.field)?.label ||
                 col.field
-              }":row['${col.field}'],`;
+              }":row["${col.field}"],`;
           }
           return "";
         })
