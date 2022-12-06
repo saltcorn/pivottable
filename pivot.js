@@ -76,6 +76,7 @@ const configuration_workflow = (req) =>
           );
           const fields = await table.getFields();
           const json_fields = fields.filter((f) => f?.type?.name === "JSON");
+          const date_fields = fields.filter((f) => f?.type?.name === "Date");
           const { parent_field_list } = await table.get_parent_relations(
             true,
             true
@@ -127,6 +128,16 @@ const configuration_workflow = (req) =>
                       type: "Field",
                       expand_subfields: false,
                       field: json_fields.map((f) => f.name),
+                    },
+                  },
+                  {
+                    name: "format",
+                    label: "Date format",
+                    type: "String",
+                    sublabel: "moment.js format specifier",
+                    showIf: {
+                      type: "Field",
+                      field: date_fields.map((f) => f.name),
                     },
                   },
                   {
@@ -248,6 +259,15 @@ function (injectRecord) {
               col.label || col.join_field.replaceAll(".", "_")
             }":row["${col.join_field.replaceAll(".", "_")}"],`;
           if (col.type === "Field") {
+            if (col.format) {
+              return `"${
+                col.label ||
+                fields.find((f) => f.name === col.field)?.label ||
+                col.field
+              }":moment(row["${col.field}"]).format(${JSON.stringify(
+                col.format
+              )}),`;
+            }
             if (col.expand_subfields) {
               const field = fields.find((f) => f.name === col.field);
               return (field.attributes?.schema || [])
