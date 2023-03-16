@@ -355,7 +355,7 @@ const presetsBtn = (presets, can_edit, viewname, rndid) =>
             can_edit &&
               a(
                 {
-                  href: `javascript:delete_preset('${viewname}','${k}');`,
+                  href: `javascript:delete_pivot_preset('${k}');`,
                 },
                 i({ class: "fas fa-trash-alt" })
               )
@@ -381,6 +381,11 @@ const presetsBtn = (presets, can_edit, viewname, rndid) =>
     view_post('${viewname}', "add_preset", {
       name,
       preset,
+    });
+  }
+  function delete_pivot_preset(name) {
+    view_post('${viewname}', "delete_preset", {
+      name,
     });
   }
   function activate_pivot_preset(cfgs) {
