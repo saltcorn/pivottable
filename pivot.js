@@ -3,6 +3,7 @@ const Field = require("@saltcorn/data/models/field");
 const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
 const View = require("@saltcorn/data/models/view");
+const User = require("@saltcorn/data/models/user");
 const Workflow = require("@saltcorn/data/models/workflow");
 const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
 const {
@@ -179,6 +180,8 @@ const configuration_workflow = (req) =>
             aggregations,
           });
           remove_unused_fields(fields, context.columns, tbl_rows);
+          const roles = await User.get_roles();
+
           return new Form({
             blurb: [
               div({ id: "pivotoutput" }),
@@ -221,6 +224,21 @@ const configuration_workflow = (req) =>
                 label: "Show UI",
                 sublabel: "Allow the user to change the table settings",
                 type: "Bool",
+              },
+              {
+                name: "has_presets",
+                label: "Presets",
+                sublabel: "Allow the user to store table settings",
+                type: "Bool",
+                showIf: { show_ui: true },
+              },
+              {
+                name: "min_role_preset_edit",
+                label: "Role to edit",
+                sublabel: "Role required to edit presets",
+                input_type: "select",
+                showIf: { show_ui: true, has_presets: true },
+                options: roles.map((r) => ({ value: r.id, label: r.role })),
               },
             ],
           });
@@ -300,10 +318,74 @@ function (injectRecord) {
 }
 `;
 
+const presetsBtn = (presets, can_edit, viewname, rndid) =>
+  div(
+    { class: "dropdown d-inline mx-1" },
+    button(
+      {
+        class: "btn btn-sm btn-outline-secondary dropdown-toggle",
+        "data-boundary": "viewport",
+        type: "button",
+        id: "btnHideCols",
+        "data-bs-toggle": "dropdown",
+        "aria-haspopup": "true",
+        "aria-expanded": "false",
+      },
+      "Presets"
+    ),
+    div(
+      {
+        class: "dropdown-menu",
+        "aria-labelledby": "btnHideCols",
+      },
+      form(
+        { class: "px-2 tabShowHideCols" },
+
+        Object.entries(presets || {}).map(([k, v]) =>
+          div(
+            a(
+              {
+                href: `javascript:activate_preset('${encodeURIComponent(
+                  JSON.stringify(v)
+                )}', '${rndid}');`,
+              },
+              k
+            ),
+            can_edit &&
+              a(
+                {
+                  href: `javascript:delete_preset('${viewname}','${k}');`,
+                },
+                i({ class: "fas fa-trash-alt" })
+              )
+          )
+        ),
+        can_edit &&
+          a(
+            {
+              class: "d-block",
+              href: `javascript:add_preset('${viewname}');`,
+            },
+            i({ class: "fas fa-plus" }),
+            "Add"
+          )
+      )
+    )
+  );
+
 const run = async (
   table_id,
   viewname,
-  { config, columns, show_ui, height, width },
+  {
+    config,
+    columns,
+    show_ui,
+    height,
+    width,
+    presets,
+    has_presets,
+    min_role_preset_edit,
+  },
   state,
   extraArgs
 ) => {
@@ -330,8 +412,16 @@ const run = async (
   };
   if (height) newConfig.rendererOptions.plotly.height = height;
   if (width) newConfig.rendererOptions.plotly.width = width;
+  let presetHtml = has_presets
+    ? presetsBtn(
+        presets,
+        extraArgs.req?.user?.role_id || 10 <= (min_role_preset_edit || 1),
+        viewname
+      )
+    : "";
 
   return (
+    presetHtml +
     div({ id: "pivotoutput" }) +
     script(
       domReady(`
@@ -368,10 +458,56 @@ const initial_config = async ({ table_id, exttable_name }) => {
 
   return { columns };
 };
+
+const add_preset = async (
+  table_id,
+  viewname,
+  { presets, min_role_preset_edit },
+  body,
+  { req, res }
+) => {
+  if ((req.user?.role_id || 10) > (min_role_preset_edit || 1)) {
+    console.log("not authorized", min_role_preset_edit);
+    return;
+  }
+  const newPresets = presets || {};
+  newPresets[body.name] = body.preset;
+  const view = await View.findOne({ name: viewname });
+  const newConfig = {
+    configuration: { ...view.configuration, presets: newPresets },
+  };
+  await View.update(newConfig, view.id);
+};
+
+const delete_preset = async (
+  table_id,
+  viewname,
+  { presets, min_role_preset_edit },
+  body,
+  { req, res }
+) => {
+  if ((req.user?.role_id || 10) > +(min_role_preset_edit || 1)) {
+    console.log("not authorized");
+    return;
+  }
+
+  const newPresets = presets || {};
+  delete newPresets[body.name];
+  const view = await View.findOne({ name: viewname });
+  const newConfig = {
+    configuration: { ...view.configuration, presets: newPresets },
+  };
+  await View.update(newConfig, view.id);
+};
+
 module.exports = {
   name: "Pivot table",
   get_state_fields,
   configuration_workflow,
   run,
   initial_config,
+  routes: {
+    add_preset,
+    delete_preset,
+  },
 };
