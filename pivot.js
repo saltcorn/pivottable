@@ -393,7 +393,7 @@ const presetsBtn = (presets, can_edit, viewname, rndid) =>
     const cfg = JSON.parse(decodeURIComponent(cfgs))    
     $("#pivotoutput").pivotUI(window.pivot_table_data, 
       {
-        //...window.pivot_table_config, 
+        ...window.pivot_table_config, 
         ...cfg,
         renderers: window.pivot_table_renderers,
         onRefresh: (cfg)=>{
