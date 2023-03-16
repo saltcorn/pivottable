@@ -1,6 +1,6 @@
 {
   "name": "@saltcorn/pivottable",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Pivot table based on pivottable.js",
   "main": "index.js",
   "dependencies": {
