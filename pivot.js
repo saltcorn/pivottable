@@ -9,6 +9,7 @@ const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
 const {
   text,
   div,
+  textarea,
   h5,
   style,
   a,
@@ -345,9 +346,9 @@ const presetsBtn = (presets, can_edit, viewname, rndid) =>
           div(
             a(
               {
-                href: `javascript:activate_preset('${encodeURIComponent(
+                href: `javascript:activate_pivot_preset('${encodeURIComponent(
                   JSON.stringify(v)
-                )}', '${rndid}');`,
+                )}');`,
               },
               k
             ),
@@ -364,14 +365,45 @@ const presetsBtn = (presets, can_edit, viewname, rndid) =>
           a(
             {
               class: "d-block",
-              href: `javascript:add_preset('${viewname}');`,
+              href: `javascript:add_pivot_preset('${viewname}');`,
             },
             i({ class: "fas fa-plus" }),
             "Add"
           )
       )
     )
-  );
+  ) +
+  script(`
+  function add_pivot_preset(viewname) {
+    let name = prompt("Name of new preset");
+    if (!name) return;
+    const preset = JSON.parse($("textarea#pivotpresetcfg").val());
+    view_post('${viewname}', "add_preset", {
+      name,
+      preset,
+    });
+  }
+  function activate_pivot_preset(cfgs) {
+
+    const cfg = JSON.parse(decodeURIComponent(cfgs))    
+    $("#pivotoutput").pivotUI(window.pivot_table_data, 
+      {
+        //...window.pivot_table_config, 
+        ...cfg,
+        renderers: window.pivot_table_renderers,
+        onRefresh: (cfg)=>{
+          var config_copy = JSON.parse(JSON.stringify(cfg));
+          //delete some values which are functions
+          delete config_copy["aggregators"];
+          delete config_copy["renderers"];
+          //delete some bulky default values
+          delete config_copy["rendererOptions"];
+          delete config_copy["localeStrings"];
+          $("textarea#pivotpresetcfg").val(JSON.stringify(config_copy))              
+         }      
+      }, true)
+  }
+  `);
 
 const run = async (
   table_id,
@@ -417,20 +449,36 @@ const run = async (
         presets,
         extraArgs.req?.user?.role_id || 10 <= (min_role_preset_edit || 1),
         viewname
-      )
+      ) + textarea({ style: { display: "none" }, id: "pivotpresetcfg" })
     : "";
-
   return (
     presetHtml +
     div({ id: "pivotoutput" }) +
     script(
       domReady(`
-  const renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
+      window.pivot_table_renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
     $.pivotUtilities.plotly_renderers) : $.pivotUtilities.renderers;
-  $("#pivotoutput").pivotUI(${buildDataXform(fields, columns, tbl_rows)}, 
+    window.pivot_table_data = ${buildDataXform(fields, columns, tbl_rows)};
+    window.pivot_table_config = ${JSON.stringify(newConfig)};
+  $("#pivotoutput").pivotUI(window.pivot_table_data, 
   {
-    ...(${JSON.stringify(newConfig)}),
-    renderers
+    ...window.pivot_table_config,
+    renderers: window.pivot_table_renderers,
+     ${
+       has_presets
+         ? `onRefresh: (cfg)=>{
+      var config_copy = JSON.parse(JSON.stringify(cfg));
+      //delete some values which are functions
+      delete config_copy["aggregators"];
+      delete config_copy["renderers"];
+      //delete some bulky default values
+      delete config_copy["rendererOptions"];
+      delete config_copy["localeStrings"];
+      $("textarea#pivotpresetcfg").val(JSON.stringify(config_copy))
+          }`
+         : ""
+     }
+    
   })
   `)
     )
