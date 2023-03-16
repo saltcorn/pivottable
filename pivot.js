@@ -256,8 +256,8 @@ function (injectRecord) {
         .map((col) => {
           if (col.type === "JoinField")
             return `"${
-              col.label || col.join_field.replaceAll(".", "_")
-            }":row["${col.join_field.replaceAll(".", "_")}"],`;
+              col.label || col.join_field.replace(/\./g, "_")
+            }":row["${col.join_field.replace(/\./g, "_")}"],`;
           if (col.type === "Field") {
             if (col.format) {
               return `"${
