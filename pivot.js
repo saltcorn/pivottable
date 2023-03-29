@@ -260,6 +260,7 @@ const configuration_workflow = (req) =>
                 label: "Width",
                 type: "Integer",
               },
+              { name: "fontSize", label: "Font size", type: "Integer" },
             ],
           });
         },
@@ -419,6 +420,7 @@ const run = async (
     show_ui,
     height,
     width,
+    fontSize,
     presets,
     has_presets,
     min_role_preset_edit,
@@ -449,6 +451,8 @@ const run = async (
   };
   if (height) newConfig.rendererOptions.plotly.height = height;
   if (width) newConfig.rendererOptions.plotly.width = width;
+  if (fontSize) newConfig.rendererOptions.plotly.font = { size: fontSize };
+
   let presetHtml = has_presets
     ? presetsBtn(
         presets,
