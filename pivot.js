@@ -254,12 +254,35 @@ const configuration_workflow = (req) =>
                 name: "height",
                 label: "Height",
                 type: "Integer",
+                attributes: { asideNext: true },
+              },
+              {
+                name: "height_units",
+                label: "Units",
+                type: "String",
+                fieldview: "radio_group",
+                attributes: {
+                  inline: true,
+                  options: ["px", "vh"],
+                },
               },
               {
                 name: "width",
                 label: "Width",
                 type: "Integer",
+                attributes: { asideNext: true },
               },
+              {
+                name: "width_units",
+                label: "Units",
+                type: "String",
+                fieldview: "radio_group",
+                attributes: {
+                  inline: true,
+                  options: ["px", "vw"],
+                },
+              },
+
               { name: "fontSize", label: "Font size", type: "Integer" },
             ],
           });
@@ -420,6 +443,8 @@ const run = async (
     show_ui,
     height,
     width,
+    height_units,
+    width_units,
     fontSize,
     presets,
     has_presets,
@@ -469,6 +494,18 @@ const run = async (
     $.pivotUtilities.plotly_renderers) : $.pivotUtilities.renderers;
     window.pivot_table_data = ${buildDataXform(fields, columns, tbl_rows)};
     window.pivot_table_config = ${JSON.stringify(newConfig)};
+    ${
+      height_units === "vh" && height
+        ? `window.pivot_table_config.rendererOptions.plotly.height 
+             = window.innerHeight*${height}/100`
+        : ""
+    }
+    ${
+      width_units === "vw" && width
+        ? `window.pivot_table_config.rendererOptions.plotly.width 
+             = window.innerWidth*${width}/100`
+        : ""
+    }
   $("#pivotoutput").pivotUI(window.pivot_table_data, 
   {
     ...window.pivot_table_config,
