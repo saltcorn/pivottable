@@ -39,6 +39,8 @@ const {
   run_action_column,
 } = require("@saltcorn/data/plugin-helper");
 
+const public_user_role = features?.public_user_role || 10;
+
 const get_state_fields = async (table_id, viewname, { show_view }) => {
   const table_fields = await Field.find({ table_id });
   return table_fields
@@ -481,7 +483,8 @@ const run = async (
   let presetHtml = has_presets
     ? presetsBtn(
         presets,
-        extraArgs.req?.user?.role_id || 10 <= (min_role_preset_edit || 1),
+        (extraArgs.req?.user?.role_id || public_user_role) <=
+          (min_role_preset_edit || 1),
         viewname
       ) + textarea({ style: { display: "none" }, id: "pivotpresetcfg" })
     : "";
@@ -560,7 +563,7 @@ const add_preset = async (
   body,
   { req, res }
 ) => {
-  if ((req.user?.role_id || 10) > (min_role_preset_edit || 1)) {
+  if ((req.user?.role_id || public_user_role) > (min_role_preset_edit || 1)) {
     console.log("not authorized", min_role_preset_edit);
     return;
   }
@@ -580,7 +583,7 @@ const delete_preset = async (
   body,
   { req, res }
 ) => {
-  if ((req.user?.role_id || 10) > +(min_role_preset_edit || 1)) {
+  if ((req.user?.role_id || public_user_role) > +(min_role_preset_edit || 1)) {
     console.log("not authorized");
     return;
   }
