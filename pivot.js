@@ -42,7 +42,8 @@ const {
 const public_user_role = features?.public_user_role || 10;
 
 const get_state_fields = async (table_id, viewname, { show_view }) => {
-  const table_fields = await Field.find({ table_id });
+  const table = Table.findOne(table_id);
+  const table_fields = table.fields;
   return table_fields
     .filter((f) => !f.primary_key)
     .map((f) => {
