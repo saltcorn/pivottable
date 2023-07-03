@@ -418,7 +418,7 @@ const presetsBtn = (presets, can_edit, viewname, rndid) =>
   function activate_pivot_preset(cfgs) {
 
     const cfg = JSON.parse(decodeURIComponent(cfgs))    
-    $("#pivotoutput").pivotUI(window.pivot_table_data, 
+    $("#pivotoutput${rndid}").pivotUI(window.pivot_table_data, 
       {
         ...window.pivot_table_config, 
         ...cfg,
@@ -481,17 +481,21 @@ const run = async (
   if (width) newConfig.rendererOptions.plotly.width = width;
   if (fontSize) newConfig.rendererOptions.plotly.font = { size: fontSize };
 
+  const rndid = Math.floor(Math.random() * 16777215).toString(16);
+
   let presetHtml = has_presets
     ? presetsBtn(
         presets,
         (extraArgs.req?.user?.role_id || public_user_role) <=
           (min_role_preset_edit || 1),
-        viewname
+        viewname,
+        rndid
       ) + textarea({ style: { display: "none" }, id: "pivotpresetcfg" })
     : "";
+
   return (
     presetHtml +
-    div({ id: "pivotoutput" }) +
+    div({ id: "pivotoutput" + rndid }) +
     script(
       domReady(`
       window.pivot_table_renderers = window.Plotly ? $.extend($.pivotUtilities.renderers,
@@ -510,7 +514,7 @@ const run = async (
              = window.innerWidth*${width}/100`
         : ""
     }
-  $("#pivotoutput").pivotUI(window.pivot_table_data, 
+  $("#pivotoutput${rndid}").pivotUI(window.pivot_table_data, 
   {
     ...window.pivot_table_config,
     renderers: window.pivot_table_renderers,
