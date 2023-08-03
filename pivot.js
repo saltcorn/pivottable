@@ -416,8 +416,8 @@ const presetsBtn = (presets, can_edit, viewname, rndid) =>
     });
   }
   function activate_pivot_preset(cfgs) {
-
-    const cfg = JSON.parse(decodeURIComponent(cfgs))    
+    const cfg_decoded = cfgs.includes("{") || cfgs.includes("[") ? cfgs : decodeURIComponent(cfgs);
+    const cfg = JSON.parse(cfg_decoded)    
     $("#pivotoutput${rndid}").pivotUI(window.pivot_table_data, 
       {
         ...window.pivot_table_config, 
